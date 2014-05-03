@@ -1,0 +1,90 @@
+package com.example.signing;
+
+import java.util.ArrayList;
+
+import android.graphics.Bitmap;
+import android.os.AsyncTask;
+import android.util.Log;
+
+public class Rowitem {
+	String vProdID;
+	String ProdName;
+	String Author;
+	String Price;
+	String SalePrice;
+	String Image_URL;
+	String sample;
+	String Length;
+	String ProdDesc;
+	String image;
+	private boolean selected;
+	
+	
+	public boolean isSelected() {
+		return selected;
+	}
+	public void setSelected(boolean selected) {
+		this.selected = selected;
+	}
+	public String getvProdID() {
+		return vProdID;
+	}
+	public void setvProdID(String vProdID) {
+		this.vProdID = vProdID;
+	}
+	public String getProdName() {
+		return ProdName;
+	}
+	public void setProdName(String prodName) {
+		ProdName = prodName;
+	}
+	public String getAuthor() {
+		return Author;
+	}
+	public void setAuthor(String author) {
+		Author = author;
+	}
+	public String getPrice() {
+		return Price;
+	}
+	public void setPrice(String price) {
+		Price = price;
+	}
+	public String getSalePrice() {
+		return SalePrice;
+	}
+	public void setSalePrice(String salePrice) {
+		SalePrice = salePrice;
+	}
+	
+	public String getImage_URL() {
+		return Image_URL;
+	}
+	public void setImage_URL(String image_URL) {
+		Image_URL = image_URL;
+	}
+	public String getSample() {
+		return sample;
+	}
+	public void setSample(String sample) {
+		this.sample = sample;
+	}
+	public String getLength() {
+		return Length;
+	}
+	public void setLength(String length) {
+		Length = length;
+	}
+	public String getProdDesc() {
+		return ProdDesc;
+	}
+	public void setProdDesc(String prodDesc) {
+		ProdDesc = prodDesc;
+	}
+	
+		
+	
+	
+	
+
+}
