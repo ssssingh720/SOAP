@@ -1,0 +1,641 @@
+
+package com.example.signing;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.channels.SelectableChannel;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.ksoap2.SoapEnvelope;
+import org.ksoap2.serialization.KvmSerializable;
+import org.ksoap2.serialization.SoapObject;
+import org.ksoap2.serialization.SoapPrimitive;
+import org.ksoap2.serialization.SoapSerializationEnvelope;
+import org.ksoap2.transport.HttpTransportSE;
+
+import com.example.signing.ServerToList.EfficientAdapter.ViewHolder;
+import com.punya.reado.HorizontalListView;
+
+
+import android.R.color;
+import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.app.ProgressDialog;
+import android.content.Context;
+import android.graphics.Color;
+import android.graphics.Typeface;
+import android.media.AudioManager;
+
+import android.media.MediaPlayer;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.net.Uri;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.util.Log;
+import android.util.SparseBooleanArray;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.Window;
+import android.view.View.OnClickListener;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.AdapterView.OnItemSelectedListener;
+import android.widget.ArrayAdapter;
+import android.widget.BaseAdapter;
+import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.Gallery;
+import android.widget.HorizontalScrollView;
+import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ListAdapter;
+import android.widget.ListView;
+import android.widget.Spinner;
+import android.widget.TextView;
+import android.widget.Toast;
+
+@SuppressWarnings("unused")
+public class ServerToList extends Activity implements
+MediaPlayer.OnCompletionListener, MediaPlayer.OnPreparedListener,
+MediaPlayer.OnErrorListener, MediaPlayer.OnBufferingUpdateListener
+{
+	String receivedString;
+	//String Pro_id,Prod_name,Author,Price,Sale_Price,Image,sample,prod_desc;
+
+	String Prod_Name,Image,Authore_Name,Product_description,Sale_price,Audi_Songs,songs;
+	public ArrayList<Rowitem> authore;
+	ListView author;
+	ProgressDialog progressDialog;
+	ListView listview;
+	private HorizontalListView mHlvSimpleList;
+	JSONArray jArray;
+	private MediaPlayer mp = null;
+	private String TAG = getClass().getSimpleName();
+	boolean isSongPlaying=false;
+	boolean isChecked=true;
+	int selectedIndex=-1;
+	byte[] art;
+
+	Button btn_1,btn_2;
+	int currIndex = 0;
+
+	EfficientAdapter listAdapter;
+
+
+
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.server_to_list);
+		mHlvSimpleList=(HorizontalListView) findViewById(R.id.hlvCustomList);
+		
+		authore=new ArrayList<Rowitem>();
+		new GetBookformWebserivce().execute();
+		
+		listAdapter=new EfficientAdapter(ServerToList.this,R.layout.horizontal_item,authore);
+
+		mHlvSimpleList.setAdapter(listAdapter);
+
+		mHlvSimpleList.setOnItemClickListener(new OnItemClickListener() {
+
+		
+			public void onItemClick(AdapterView<?> arg0, View view, int position,
+					long arg3) {
+
+
+				ViewHolder holder = (ViewHolder) view.getTag();
+				Rowitem rowItem= authore.get(position);
+				holder.checkbox.setChecked(rowItem.isSelected());
+
+				Button btn_1=(Button)findViewById(R.id.btn_1);
+				Button btn_2=(Button)findViewById(R.id.btn_2);
+				CheckBox check=(CheckBox)findViewById(R.id.checkBox1);
+
+				if(!authore.get(position).isSelected())
+				{
+					int isNeedtoCheck=checkNoOfCheckedSonges();
+					if(isNeedtoCheck==0)
+					{
+						authore.get(position).setSelected(true);
+						btn_1.setBackgroundResource(R.drawable.round_blue);
+						//((CompoundButton)view).setChecked(true);
+
+					}
+					else if(isNeedtoCheck==1)
+					{
+						authore.get(position).setSelected(true);
+						btn_2.setBackgroundResource(R.drawable.round_blue);
+						//((CompoundButton) view).setChecked(true);
+
+					}
+					else
+					{
+						authore.get(position).setSelected(false);
+						//((CompoundButton)view).setChecked(false);
+					}
+
+				}else{
+					//((CheckBox)view).setChecked(false);
+					authore.get(position).setSelected(false);
+					int isNeedtoCheck=checkNoOfCheckedSonges();
+					if(isNeedtoCheck==0)
+					{
+						authore.get(position).setSelected(false);
+						btn_1.setBackgroundResource(R.drawable.round);
+
+					}
+					if(isNeedtoCheck==1)
+					{
+						authore.get(position).setSelected(false);
+						btn_2.setBackgroundResource(R.drawable.round);
+					}
+
+
+				}
+				listAdapter.notifyDataSetChanged();
+			}
+
+			private int checkNoOfCheckedSonges() {
+
+
+				int selectedCount=0;
+
+				for (int i = 0; i < authore.size(); i++) {
+					Rowitem rowItem= authore.get(i);
+
+					if(rowItem.isSelected())
+						selectedCount++;
+
+				}
+
+				if(selectedCount<=0)
+				{
+					return selectedCount;
+				}
+				if(selectedCount==1)
+				{
+					return selectedCount;
+				}
+				else
+				{				
+					Toast.makeText(getApplicationContext(), "More Than 2 Book Selected", Toast.LENGTH_SHORT).show();
+					return selectedCount;
+				}
+
+
+				// TODO Auto-generated method stub
+
+			}
+		});
+
+		//Toast.makeText(getApplicationContext(), "Hello  "+position, Toast.LENGTH_SHORT).show();			
+		/*	ViewHolder holder = (ViewHolder) view.getTag();
+				if(isSongPlaying && selectedIndex == position)
+				{
+					selectedIndex=position;
+					stop();
+					holder.bttonplay.setBackgroundResource(R.drawable.button_play);
+				}
+				else if( isSongPlaying &&selectedIndex != position)
+				{
+					stop();
+					play(position);
+					selectedIndex=position;
+					holder.bttonplay.setBackgroundResource(R.drawable.button_pause);
+				}
+				else
+				{
+					selectedIndex=position;
+					play(position);
+					holder.bttonplay.setBackgroundResource(R.drawable.button_pause);
+				}
+
+				listAdapter.notifyDataSetChanged();
+			}
+		});
+		 */
+	}
+
+	@Override
+	protected void onResume() {
+		// TODO Auto-generated method stub
+		super.onResume();
+		selectedIndex=-1;
+		isSongPlaying=false;
+		listAdapter.notifyDataSetChanged();
+
+	}
+
+	private class GetBookformWebserivce extends AsyncTask<Void, Void, Void> 
+	{         
+		private ProgressDialog Dialog = new ProgressDialog(ServerToList.this);      
+		@Override
+		protected void onPreExecute()          
+		{                  
+			Dialog.setMessage("Please wait...");     
+			Dialog.show();      
+		}
+		@Override
+		protected void onPostExecute(Void unused)        
+		{               
+			try            
+			{              
+				if(Dialog.isShowing())       
+				{ 
+					Dialog.dismiss();
+					listAdapter=new EfficientAdapter(ServerToList.this,R.layout.horizontal_item,authore);
+
+					mHlvSimpleList.setAdapter(listAdapter);
+
+
+				}  
+
+			}
+			catch(Exception e)       
+			{               
+				Toast.makeText(getApplicationContext(),
+						"Error....", Toast.LENGTH_LONG).show();
+				Dialog.dismiss();   
+			} 
+		}
+		@Override      
+		protected Void doInBackground(Void... params)  
+		{          
+
+
+			getBook();
+
+			return null;     
+		}
+	}  // close Asyn task class
+
+
+	public void getBook()
+	{
+		//webservice_audiobook.clear();
+		final String SOAP_ACTION = "http://tempuri.org/ShowNewRelease";
+		final String METHOD_NAME = "ShowNewRelease";
+		final String NAMESPACE = "http://tempuri.org/";
+		final String URL = "http://admin.reado.com/AndroidTest.asmx";
+
+		SoapObject request = new SoapObject(NAMESPACE, METHOD_NAME);   
+		SoapSerializationEnvelope envelope = new SoapSerializationEnvelope(SoapEnvelope.VER11);  
+		envelope.dotNet = true; 
+
+		envelope.setOutputSoapObject(request);
+		HttpTransportSE androidHttpTransport = new HttpTransportSE(URL);  
+
+		try 
+		{   
+			androidHttpTransport.call(SOAP_ACTION, envelope);
+			KvmSerializable ks = (KvmSerializable)envelope.bodyIn;
+			System.out.println("punya123 "  +ks);
+			for(int j=0;j<ks.getPropertyCount();j++)
+			{
+				ks.getProperty(j); //if complex type is present then you can cast this to SoapObject and if primitive type is returned you can use toString() to get actuall value.
+			}
+			receivedString = ks.toString();
+			//Toast.makeText(getBaseContext(), receivedString, Toast.LENGTH_LONG).show();
+		} 
+		catch (Exception e)
+		{      
+			Toast.makeText(getBaseContext(), e.toString(), Toast.LENGTH_LONG).show();
+			e.printStackTrace();    
+		}  
+		try
+		{
+
+			String Jsonstring=receivedString; 
+			String news=Jsonstring.substring(Jsonstring.indexOf("["));
+			String n1=news;
+			jArray = new JSONArray(n1);
+			int  len= jArray.length();             
+			for (int k = 0; k < (jArray.length()); k++)
+			{
+				JSONObject json_obj = jArray.getJSONObject(k);
+				Rowitem row = new Rowitem();
+				String Pro_id = json_obj.getString("vProdID");
+				Prod_Name=json_obj.getString("ProdName");
+				Authore_Name=json_obj.getString("Author");
+				String price=json_obj.getString("Price");
+				Sale_price=json_obj.getString("SalePrice");
+				Image=json_obj.getString("Image");
+				songs=json_obj.getString("sample");
+				String legnth=json_obj.getString("Length");
+				Product_description=json_obj.getString("ProdDesc");
+
+				System.out.println("narayan"  +songs);
+
+				row.setvProdID(Pro_id);
+				row.setProdName(Prod_Name);
+				row.setAuthor(Authore_Name);
+				row.setPrice(price);
+				row.setSalePrice(Sale_price);
+				row.setImage_URL(Image);
+				row.setSample(songs);
+				row.setLength(legnth);
+				row.setProdDesc(Product_description);
+
+				authore.add(row);
+
+			}    
+
+		}
+		catch(Exception e) 
+		{
+			Toast.makeText(getApplicationContext(),
+					"Error on loding data"+e.toString(), Toast.LENGTH_LONG).show();
+			e.printStackTrace();
+		} 
+
+
+	}
+
+	public  class EfficientAdapter extends BaseAdapter 
+	{	 
+		private LayoutInflater mInflater;
+		private ArrayList<Rowitem> resultArray;
+		Rowitem bean;
+		Context context;
+		public ImageLoader imageLoader; 
+
+		private int[] colors = new int[] { Color.rgb(205, 205, 205), Color.WHITE };
+		protected AdapterView<ListAdapter> listview;
+
+		public EfficientAdapter(Context context,int multiplelist, ArrayList<Rowitem> recivedArray)
+		{
+			mInflater = LayoutInflater.from(ServerToList.this);
+			resultArray=recivedArray;
+
+			imageLoader=new ImageLoader(ServerToList.this);
+		}
+		public int getCount() {
+			return resultArray.size();
+		}
+		public Object getItem(int position) {
+			return position;
+		}
+		public long getItemId(int position) {
+			return position;
+		}
+		public View getView(int position, View convertView, ViewGroup parent) 
+		{
+
+			final ViewHolder holder;
+			if (convertView == null)
+			{
+				convertView = mInflater.inflate(R.layout.horizontal_item, null);
+				holder = new ViewHolder();
+
+				bean=resultArray.get(position);
+
+
+
+				//holder.Prod_Name = (TextView) convertView.findViewById(R.id.title);
+				//	holder.author=(TextView)convertView.findViewById(R.id.title);
+				holder.prod_image=(ImageView)convertView.findViewById(R.id.horizotalimage);
+				holder.checkbox=(CheckBox)convertView.findViewById(R.id.checkBox1);
+				holder.bttonplay=(ImageView)convertView.findViewById(R.id.image_btn_play);
+				holder.btn_1=(Button)convertView.findViewById(R.id.btn_1);
+				holder.btn_2=(Button)convertView.findViewById(R.id.btn_2);
+				convertView.setTag(holder);	
+				//holder.checkbox.setTag(bean);
+			}
+			else 
+			{
+				holder = (ViewHolder) convertView.getTag();
+			}
+
+			holder.index=position;
+
+			holder.bttonplay.setTag(""+position);
+			holder.prod_image.setTag(""+position);
+			holder.checkbox.setTag(""+position);
+			//int loader = R.drawable.loader;
+
+			imageLoader.DisplayImage(resultArray.get(position).getImage_URL(), holder.prod_image);
+
+
+			if(selectedIndex==position)
+				holder.bttonplay.setBackgroundResource(R.drawable.button_pause);
+			else
+				holder.bttonplay.setBackgroundResource(R.drawable.button_play);
+
+			Rowitem rowItem= authore.get(position);
+
+			holder.checkbox.setChecked(rowItem.isSelected());
+
+			holder.checkbox.setOnClickListener(new View.OnClickListener() {
+
+				@Override
+				public void onClick(View view) {
+					int position=Integer.parseInt(view.getTag().toString());
+					Button btn_1=(Button)findViewById(R.id.btn_1);
+					Button btn_2=(Button)findViewById(R.id.btn_2);
+
+					if(!authore.get(position).isSelected())
+					{
+						int isNeedtoCheck=checkNoOfCheckedSonges();
+						if(isNeedtoCheck==0)
+						{
+							authore.get(position).setSelected(true);
+							btn_1.setBackgroundResource(R.drawable.round_blue);
+							((CheckBox)view).setChecked(true);
+
+						}
+						else if(isNeedtoCheck==1)
+						{
+							authore.get(position).setSelected(true);
+							btn_2.setBackgroundResource(R.drawable.round_blue);
+							((CheckBox)view).setChecked(true);
+
+						}
+						else
+						{
+							authore.get(position).setSelected(false);
+							((CheckBox)view).setChecked(false);
+						}
+
+					}else{
+						((CheckBox)view).setChecked(false);
+						authore.get(position).setSelected(false);
+						int isNeedtoCheck=checkNoOfCheckedSonges();
+						if(isNeedtoCheck==0)
+						{
+							authore.get(position).setSelected(false);
+							btn_1.setBackgroundResource(R.drawable.round);
+
+						}
+						if(isNeedtoCheck==1)
+						{
+							authore.get(position).setSelected(false);
+							btn_2.setBackgroundResource(R.drawable.round);
+						}
+
+
+					}
+					notifyDataSetChanged();
+				}
+			});
+
+
+
+
+			holder.bttonplay.setOnClickListener(new OnClickListener() {
+
+				@Override
+				public void onClick(View view) {
+
+					// TODO Auto-generated method stub		
+					//ImageButton btn=(ImageButton)view;
+					int position=Integer.parseInt(view.getTag().toString());
+					//Toast.makeText(getApplicationContext(), "hello 1"+position, Toast.LENGTH_LONG).show();
+					if(isSongPlaying && selectedIndex == position)
+					{
+						selectedIndex=position;
+						stop();
+						//holder.bttonplay.setBackgroundResource(R.drawable.button_play);
+					}
+					else if( isSongPlaying &&selectedIndex != position)
+					{
+						stop();
+						play(position);
+						selectedIndex=position;
+						//holder.bttonplay.setBackgroundResource(R.drawable.button_pause);
+					}
+					else
+					{
+						selectedIndex=position;
+						play(position);
+						//holder.bttonplay.setBackgroundResource(R.drawable.button_pause);
+					}
+
+					notifyDataSetChanged();
+				}
+			});
+			return convertView;
+
+		}	
+		public  class ViewHolder {
+			TextView pro_di,Prod_Name,author;
+			ImageView prod_image;
+			ImageView bttonplay;
+			CheckBox checkbox;
+			TextView user_vote;
+			Button btn_1,btn_2;
+			int index;
+		}	
+
+		private int checkNoOfCheckedSonges()
+		{
+			int selectedCount=0;
+
+			for (int i = 0; i < authore.size(); i++) {
+				Rowitem rowItem= authore.get(i);
+
+				if(rowItem.isSelected())
+					selectedCount++;
+
+			}
+
+			if(selectedCount<=0)
+			{
+				return selectedCount;
+			}
+			if(selectedCount==1)
+			{
+				return selectedCount;
+			}
+			else
+			{				
+				Toast.makeText(getApplicationContext(), "More Than 2 Book Selected", Toast.LENGTH_SHORT).show();
+				return selectedCount;
+			}
+
+		}
+
+	}	
+	private void play(int index) {
+		//Uri myUri = Uri.parse("http://fr3.ah.fm:9000/");
+		String Audi_Songs=authore.get(index).getSample();
+		Uri myUri = Uri.parse(Audi_Songs);
+		try {
+			if (mp == null) {
+				this.mp = new MediaPlayer();
+			} else {
+				mp.stop();
+				mp.reset();
+			}
+			mp.setDataSource(this, myUri); // Go to Initialized state
+			mp.setAudioStreamType(AudioManager.STREAM_MUSIC);
+			mp.setOnPreparedListener(this);
+			mp.setOnBufferingUpdateListener(this);
+
+			mp.setOnErrorListener(this);
+			mp.prepareAsync();
+
+			isSongPlaying=true;
+			//Log.d(TAG, "LoadClip Done");
+		} catch (Throwable t) {
+			//Log.d(TAG, t.toString());
+		}
+	}
+	private void stop() {
+		try {
+			if (mp != null)
+				mp.stop();	
+			isSongPlaying=false;
+			selectedIndex=-1;
+		} catch (Throwable t) {
+			//Log.d(TAG, t.toString());
+		}
+	}
+
+
+	@Override
+	public void onBufferingUpdate(MediaPlayer mp, int percent) {
+		// TODO Auto-generated method stub
+
+	}
+	@Override
+	public boolean onError(MediaPlayer mp, int what, int extra) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+	@Override
+	public void onPrepared(MediaPlayer mp) {
+		Log.d(TAG, "Stream is prepared");
+		mp.start();
+	}
+
+	public void onBackPressed(){
+		if (mp != null){
+			if(mp.isPlaying())
+				mp.stop();
+
+			mp.release();
+		}
+
+
+		super.onBackPressed(); 
+
+	}
+
+	@Override
+	public void onCompletion(MediaPlayer mp) {
+		// TODO Auto-generated method stub
+
+	}
+
+
+}
+
